@@ -1,6 +1,6 @@
 rm(list=ls())
 
-## grib file from http://apps.ecmwf.int/datasets/data/interim-full-daily/
+## grib file retrieved from http://apps.ecmwf.int/datasets/data/interim-full-daily/
 ## request details:
 # Stream: Atmospheric model
 # Area: 50.0°N 5.0°E 45.0°N 10.0°E
@@ -15,9 +15,13 @@ rm(list=ls())
 # Parameter: 10 metre U wind component, 10 metre V wind component
 # Class: ERA Interim
 
+# to load grib file, install gribr package from https://github.com/nawendt/gribr
+# requires installation of ecCodes library
 library(gribr)
 
-g <- grib_open("/home/sebastian/Dropbox/ERC SummerSchool/software_tutorials/code/data/analysis.grib")
+data_dir <- "/home/sebastian/Dropbox/ERC SummerSchool/software_tutorials/code/data/"
+
+g <- grib_open(paste0(data_dir,"analysis.grib"))
 
 gl <- grib_list(g)
 gl_shortnames <- gl$shortName
@@ -27,6 +31,7 @@ indgl_v <- which(gl$shortName == "10v")
 
 gm <- grib_get_message(g, 1:nrow(gl))
 latlon <- grib_latlons(gm[[1]])
+# position of "Heidelberg": closest grid point = 49N 8E
 pos_HD <- which(latlon$lats == 49 & latlon$lons == 8)
 
 udates <- NULL
@@ -65,9 +70,10 @@ vval <- vval[indgl_v]
 any(udates != vdates)
 dates <- udates
 
+# compute wind speed from u and v components
 observation <- sqrt(uval^2 + vval^2)
 hist(observation)
 plot(observation, type = "l")
 summary(observation)
 
-save(dates, observation, file = "/home/sebastian/Dropbox/ERC SummerSchool/software_tutorials/code/data/HDwind_analysis.Rdata")
+save(dates, observation, file = paste0(data_dir,"HDwind_analysis.Rdata"))

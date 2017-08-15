@@ -1,7 +1,7 @@
 rm(list=ls())
 
 ## grib file retrieved from http://apps.ecmwf.int/datasets/data/interim-full-daily/
-## request details:
+## web API request details:
 # Stream: Atmospheric model
 # Area: 50.0°N 5.0°E 45.0°N 10.0°E
 # Type: Analysis
@@ -19,7 +19,7 @@ rm(list=ls())
 # requires installation of ecCodes library
 library(gribr)
 
-data_dir <- "/home/sebastian/Dropbox/ERC SummerSchool/software_tutorials/code/data/"
+data_dir <- "/home/sebastian/Dropbox/ERC SummerSchool/software_tutorials/postproc_example/data/"
 
 g <- grib_open(paste0(data_dir,"analysis.grib"))
 
@@ -31,7 +31,7 @@ indgl_v <- which(gl$shortName == "10v")
 
 gm <- grib_get_message(g, 1:nrow(gl))
 latlon <- grib_latlons(gm[[1]])
-# position of "Heidelberg": closest grid point = 49N 8E
+# position of "Heidelberg": closest grid point rounded to full digits = 49N 8E
 pos_HD <- which(latlon$lats == 49 & latlon$lons == 8)
 
 udates <- NULL

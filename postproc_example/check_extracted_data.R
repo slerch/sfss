@@ -19,10 +19,10 @@ ensfc_mean <- apply(df[,2:51], 1, mean)
 fcerr <- df$obs - ensfc_mean
 
 plot(fcerr, type = "l")
-summary(fcerr)
+summary(fcdates, fcerr)
 
 ae <- abs(fcerr)
-plot(ae, type = "l")
+plot(fcdates, ae, type = "l")
 summary(ae)
 
 library(scoringRules)
@@ -31,7 +31,7 @@ crps_ens <- crps_sample(y = as.numeric(df$obs),
 
 summary(crps_ens)
 mean(crps_ens)
-plot(crps_ens, type = "l")
+plot(fcdates, crps_ens, type = "l")
 
 ## interpolated 
 
@@ -53,11 +53,11 @@ names(df) <- c("obs", sprintf("fc.%d", 1:50))
 ensfc_mean <- apply(df[,2:51], 1, mean)
 fcerr <- df$obs - ensfc_mean
 
-plot(fcerr, type = "l")
+plot(fcdates, fcerr, type = "l")
 summary(fcerr)
 
 ae <- abs(fcerr)
-plot(ae, type = "l")
+plot(fcdates, ae, type = "l")
 summary(ae)
 
 library(scoringRules)
@@ -66,4 +66,4 @@ crps_ens <- crps_sample(y = as.numeric(df$obs),
 
 summary(crps_ens)
 mean(crps_ens)
-plot(crps_ens, type = "l")
+plot(fcdates, crps_ens, type = "l")

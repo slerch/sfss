@@ -13,7 +13,7 @@ plot(dates, crpsv, type = "l")
 # initialized at day 1 00 UTC
 # valid at day 3, 12 UTC
 # therefore, to post-process forecasts initialized at day 4, 
-#   past pairs from day 1 (and before), but not from day 2,3
+#   past pairs from day 1 (and before) are available, but not from day 2,3
 
 ## excercise: fit a post-processing model for 2016
 
@@ -47,7 +47,7 @@ optim_out
 
 opt_par <- optim_out$par
 
-# comute out of sample parameters for 2016
+# compute out of sample parameters for 2016
 ind_2016 <- which(dates >= "2016-01-01")
 ens_mean_2016 <- apply(ensfc[ind_2016,], 1, mean)
 
@@ -68,11 +68,11 @@ abline(h = 0, lty = 2)
 
 
 # exercise: Try to improve simple benchmark model
-# - what other information from ensemble can be user?
+# - what other information from ensemble can be used?
 # - are there other possible parametric families to use?
 # - is there a better way to select the training period?
 
-## first test to improve simple benchmark model
+## first test to improve simple benchmark model: include ensemble standard deviation
 objective_fun_minCRPS2 <- function(par, ens_mean_train, ens_sd_train, obs_train){
   m <- cbind(1, ens_mean_train) %*% par[1:2]
   s_tmp <- cbind(1, ens_sd_train) %*% par[3:4]

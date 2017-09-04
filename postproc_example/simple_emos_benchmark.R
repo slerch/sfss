@@ -28,14 +28,6 @@ objective_fun_minCRPS <- function(par, ens_mean_train, obs_train){
 }
 
 # for 2016-01-01, we can use past pairs up to 2015-12-29
-ind_training <- which(dates <= "2015-12-29")
-ensfc_mean_training <- apply(ensfc[ind_training,], 1, mean)
-obs_training <- obs[ind_training]
-
-optim_out <- optim(par = c(1,1,1), fn = objective_fun_minCRPS, 
-                   ens_mean_train = ensfc_mean_training, 
-                   obs_train = obs_training)
-# for 2016-01-01, we can use past pairs up to 2015-12-29
 ind_training <- which(date <= "2015-12-29")
 ensfc_mean_training <- apply(ensfc[ind_training,], 1, mean)
 obs_training <- observation[ind_training]

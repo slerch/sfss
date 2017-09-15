@@ -12,7 +12,6 @@ user <- "sl"  # "sl" / "aj"
 ```
 
 
-
 ## Some introduction?
 
 absolute forecast evaluation, scoringRules introduction, some simulations?
@@ -52,7 +51,7 @@ range(dates)
 
 ## Contents of the data set: Forecasts
 
-The matrix `ensfc` contains ECMWF ensemble forecasts of wind speed for a grid point close to Heidelberg.
+The matrix `ensfc` contains ECMWF ensemble forecasts of wind speed for a grid point close to Heidelberg with a lead time of 60 hours (2.5 days).
 
 ```{r}
 str(ensfc)
@@ -63,7 +62,7 @@ For each of the 731 dates, an ensemble with 50 member forecasts is available.
 
 ## Contents of the data set: Forecasts
 
-```{r, fig.width=7, fig.height=6}
+```{r, fig.width=6, fig.height=5, out.width="0.7\\textwidth", fig.align="center"}
 hist(ensfc)
 ```
 
@@ -74,7 +73,13 @@ The vector `obs` contains reanalysis values corresponding to the valid times of 
 
 ```{r}
 str(obs)
-hist(obs)
+```
+
+
+## Contents of the data set: Observations, continued
+
+```{r, fig.width=6, fig.height=5, out.width="0.7\\textwidth", fig.align="center"}
+hist(obs, breaks = seq(0, max(ceiling(obs)), 1))
 ```
 
 
@@ -137,8 +142,198 @@ plot(dates, crpsv_ens, type = "l")
 ```
 
 
-## Slide with Bullets
+## Post-processing example
 
-- Bullet 1
-- Bullet 2
-- Bullet 3
+Aim: Fit a simple EMOS model for wind speed to data of 2016. 
+
+As a basic example, we will start by fitting a truncated normal model of the form
+\[
+Y | X_1,\dots,X_m \sim \mathcal{N}_{[0,\infty)}(\mu, \sigma^2),
+\]
+where the location parameter $\mu$ is a linear function of the ensemble mean,
+\[
+\mu = a + b\bar X,
+\]
+and the scale parameter $\sigma$ is assumed to be constant,
+\[
+\sigma^2 = c
+\]
+
+
+## Estimation - Training set
+
+We estimate the model parameters $a,b,c$ based on training data from pairs of forecasts and observations in 2015, and evaluate the out of sample forecasts in year 2016.
+
+The parameters are estimated by numerically minimizing the mean CRPS over the training set.
+
+Let's start by extracting the training data:
+
+```{r}
+ind_training <- which(dates <= "2015-12-29")
+ensfc_mean_training <- apply(ensfc[ind_training,],
+                             1, mean)
+obs_training <- obs[ind_training]
+```
+
+<!-- Note that we only use dates before "2015-12-29" due to the lead time of the forecasts. -->
+
+## Estimation - Objective function
+
+Next, we define an objective function we aim to minimize. The objective function computes the (aggregated) CRPS over the training period, as a function of $a,b,c$.
+
+```{r}
+objective_fun_minCRPS <- function(par, ens_mean_train, 
+                                  obs_train){
+  m <- cbind(1, ens_mean_train) %*% par[1:2]
+  s <- sqrt(par[3])
+  return(sum(crps_tnorm(y = obs_train, 
+                        location = m, scale = s, 
+                        lower = 0, upper = Inf)))
+}
+```
+
+In the objective function, we use a function from the `scoringRules` package to compute the CRPS of the truncated normal distribution, to see details, try
+```{r, eval=FALSE}
+?crps_tnorm
+```
+
+
+## Estimation - Numerical optimization
+
+Now, we can estimate optimal values of $a,b,c$ using the numerical optimization function `optim()`
+
+```{r}
+optim_out <- optim(par = c(1,1,1), # starting values
+                   fn = objective_fun_minCRPS, 
+                   ens_mean_train = ensfc_mean_training, 
+                   obs_train = obs_training)
+```
+
+To view details on the outcome, take a look at `optim_out`. The optimal parameters can be accessed via
+
+```{r}
+optim_out$par
+```
+
+
+## Out of sample evaluation - Preparations
+
+First, let' save the optimal parameter values we just determined:
+```{r}
+opt_par <- optim_out$par
+```
+
+Now, we extract ensemble forecasts and observations during the evaluation period (2016):
+
+```{r}
+ind_2016 <- which(dates >= "2016-01-01")
+obs_2016 <- obs[ind_2016]
+ensfc_2016 <- ensfc[ind_2016, ]
+```
+
+
+## Out of sample evaluation - Forecast distribution parameters
+
+Recall that in our truncated normal model,
+\[
+\mu = a + b \bar X \qquad \sigma^2 = c.
+\]
+
+Based on the estimated parameters $a,b,c$ in `opt_par`, we can now compute the values of $\mu$ and $\sigma$ for 2016.
+
+```{r}
+ens_mean_2016 <- apply(ensfc[ind_2016,], 1, mean)
+tn_mu <- c(cbind(1, ens_mean_2016) %*% opt_par[1:2])
+tn_sigma <- sqrt(opt_par[3])
+```
+
+Based on `tn_mu` and `tn_sigma`, we can now compute the CRPS for our post-processing model.
+
+```{r}
+crps_emos <- crps_tnorm(y = obs_2016, 
+                        location = tn_mu, scale = tn_sigma, 
+                        lower = 0, upper = Inf)
+```
+
+
+## Out of sample evaluation - Scores
+
+For comparison, we also compute the CRPS of the raw ensemble in 2016.
+
+```{r}
+crps_ens <- crps_sample(y = obs_2016, dat = ensfc_2016)
+```
+
+Now, we can compare the raw and post-processed ensemble forecasts
+
+```{r}
+mean(crps_ens)
+mean(crps_emos)
+```
+
+## Out of sample evaluation - Results
+
+Post-processing substantially improves the raw ensemble forecasts:
+
+```{r}
+summary(crps_ens - crps_emos)
+```
+
+
+## Out of sample evaluation - Results, continued
+
+```{r, fig.width=7, fig.height=5, out.width="0.75\\textwidth", fig.align="center"}
+hist(crps_ens - crps_emos)
+abline(v = 0, col = "red", lwd = 2)
+```
+
+## Out of sample evaluation - Calibration
+
+To compute PIT values, we need a function to compute the CDF of a truncated normal distribution
+```{r}
+ptnorm0 <- function(q, mu, sig){
+  t1 <- pnorm((q-mu)/sig) - pnorm(-mu/sig)
+  t2 <- 1 - pnorm(-mu/sig)
+  return(t1/t2)
+}
+```
+
+Now, we can compute the PIT values
+```{r}
+pit_emos <- ptnorm0(obs_2016, tn_mu, tn_sigma)
+```
+
+
+## Out of sample evaluation - Calibration, continued
+
+Similarly, we need to compute the verification ranks of the observation when pooled within the raw ensemble forecasts.
+
+```{r}
+vrh_emos <- numeric(length = length(obs_2016))
+for(i in 1:length(obs_2016)){
+  vrh_emos[i] <- rank(c(obs_2016[i], ensfc_2016[i,]))[1]
+}
+```
+
+
+## Out of sample evaluation - Calibration, continued
+
+```{r, fig.width=9, fig.height=5, out.width="0.8\\textwidth", fig.align="center"}
+par(mfrow=c(1,2))
+hist(vrh_emos, freq = FALSE, breaks = seq(0, 51, 3), 
+     ylim = 1/51*c(0,4)); abline(h = 1/51, lty = 2)
+hist(pit_emos, breaks = seq(0, 1, length.out = 17), 
+     freq = FALSE, ylim = c(0,4)); abline(h = 1, lty = 2)
+```
+
+
+## Exercise
+
+Build your own post-processing model. Try to outperform our simple benchmark model for data from 2016.
+\bigbreak
+\pause
+Some hints for potential improvements:
+
+- what other information from the ensemble be used?
+- are there alternative ways to select the training period?
+- are there other parametric families that might be useful for wind speed?

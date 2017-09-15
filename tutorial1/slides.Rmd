@@ -1,0 +1,144 @@
+---
+title: "Software Tutorial: Verification and post-processing"
+author: Alexander Jordan, Sebastian Lerch
+date: ScienceFore Summer School, October 2017
+output:
+  beamer_presentation:
+    highlight: default # “default”, “tango”, “pygments”, “kate”, “monochrome”, “espresso”, “zenburn”, and “haddock” 
+---
+
+```{r, eval = TRUE, echo = FALSE}
+user <- "sl"  # "sl" / "aj"
+```
+
+
+
+## Some introduction?
+
+absolute forecast evaluation, scoringRules introduction, some simulations?
+
+## Data
+
+Set path to directory containing the data
+```{r, eval = FALSE, echo = TRUE}
+data_dir <- "/path/to/data/"
+```
+
+```{r, eval = TRUE, echo = FALSE}
+if(user == "sl"){
+  data_dir <- "/home/sebastian/Dropbox/ERC SummerSchool/software_tutorials/postproc_example/data/new/"
+} else if(user == "aj"){
+  data_dir <- 123
+}
+```
+
+and load the data set
+```{r}
+load(paste0(data_dir, "HDwind.Rdata"))
+```
+
+
+## Contents of the data set
+
+The data set contains objects `ensfc`, `obs` and `dates`
+
+The vector `dates` contains dates in 2015 and 2016, at which the forecasts and corresponding observations are valid (at 12 UTC).
+
+```{r}
+str(dates)
+range(dates)
+```
+
+
+## Contents of the data set: Forecasts
+
+The matrix `ensfc` contains ECMWF ensemble forecasts of wind speed for a grid point close to Heidelberg.
+
+```{r}
+str(ensfc)
+```
+
+For each of the 731 dates, an ensemble with 50 member forecasts is available.
+
+
+## Contents of the data set: Forecasts
+
+```{r, fig.width=7, fig.height=6}
+hist(ensfc)
+```
+
+
+## Contents of the data set: Observations
+
+The vector `obs` contains reanalysis values corresponding to the valid times of the ensemble forecasts.
+
+```{r}
+str(obs)
+hist(obs)
+```
+
+
+## The scoringRules package
+
+To install the `scoringRules` package
+```{r, eval = FALSE}
+install.packages("scoringRules")
+```
+
+To load the `scoringRules` package
+```{r}
+library(scoringRules)
+```
+
+Check if version is $\geq$ 0.9.3
+```{r}
+packageVersion("scoringRules") >= "0.9.3"
+```
+If this is not the case, re-install the package from CRAN.
+
+
+## Documentation of the scoringRules package
+
+The documentation of individual functions can be accessed via e.g.
+```{r, eval = FALSE}
+?crps_sample
+```
+
+To browse the documentation of the functions available in the package use
+```{r, eval = FALSE}
+help.start()
+```
+and navigate to `'packages' - 'scoringRules'`
+
+Vignettes with introductions and background information provided with the package can be accessed via
+```{r, eval = FALSE}
+browseVignettes("scoringRules")
+```
+
+More information is available in our working paper 'Evaluating probabilistic forecasts with the R package scoringRules' available at https://arxiv.org/abs/1709.04743.
+
+
+## Compute the CRPS of the ensemble forecast
+
+.. or: show simulation examples and use this as exercise?
+
+```{r}
+crpsv_ens <- crps_sample(y = obs, dat = ensfc)
+summary(crpsv_ens)
+```
+
+
+## Plot CRPS values 
+
+```{r, fig.width=10, fig.height=5}
+par(mfrow = c(1,2))
+hist(crpsv_ens)
+plot(dates, crpsv_ens, type = "l")
+```
+
+
+## Slide with Bullets
+
+- Bullet 1
+- Bullet 2
+- Bullet 3

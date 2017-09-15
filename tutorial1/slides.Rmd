@@ -95,12 +95,10 @@ To load the `scoringRules` package
 library(scoringRules)
 ```
 
-Check if version is $\geq$ 0.9.3
+Check if version is $\geq$ 0.9.3 (otherwise: re-install the package)
 ```{r}
 packageVersion("scoringRules") >= "0.9.3"
 ```
-If this is not the case, re-install the package from CRAN.
-
 
 ## Documentation of the scoringRules package
 
@@ -111,16 +109,17 @@ The documentation of individual functions can be accessed via e.g.
 
 To browse the documentation of the functions available in the package use
 ```{r, eval = FALSE}
-help.start()
+help.start() ## navigate to 'packages' - 'scoringRules'
 ```
-and navigate to `'packages' - 'scoringRules'`
+
+## Documentation of the scoringRules package
 
 Vignettes with introductions and background information provided with the package can be accessed via
 ```{r, eval = FALSE}
 browseVignettes("scoringRules")
 ```
 
-More information is available in our working paper 'Evaluating probabilistic forecasts with the R package scoringRules' available at https://arxiv.org/abs/1709.04743.
+For more information see our working paper available at https://arxiv.org/abs/1709.04743.
 
 
 ## Compute the CRPS of the ensemble forecast
@@ -162,12 +161,12 @@ and the scale parameter $\sigma$ is assumed to be constant,
 
 ## Estimation - Training set
 
-We estimate the model parameters $a,b,c$ based on training data from pairs of forecasts and observations in 2015, and evaluate the out of sample forecasts in year 2016.
+Plan: Estimate model parameters $a,b,c$ based on training data (forecast-observation pairs in 2015), and evaluate the forecasts for 2016.
 
 The parameters are estimated by numerically minimizing the mean CRPS over the training set.
 
+\pause
 Let's start by extracting the training data:
-
 ```{r}
 ind_training <- which(dates <= "2015-12-29")
 ensfc_mean_training <- apply(ensfc[ind_training,],
@@ -179,7 +178,7 @@ obs_training <- obs[ind_training]
 
 ## Estimation - Objective function
 
-Next, we define an objective function we aim to minimize. The objective function computes the (aggregated) CRPS over the training period, as a function of $a,b,c$.
+Next, we define an objective function we aim to minimize which computes the (aggregated) CRPS over the training period as a function of $a,b,c$.
 
 ```{r}
 objective_fun_minCRPS <- function(par, ens_mean_train, 
@@ -192,7 +191,7 @@ objective_fun_minCRPS <- function(par, ens_mean_train,
 }
 ```
 
-In the objective function, we use a function from the `scoringRules` package to compute the CRPS of the truncated normal distribution, to see details, try
+To compute the CRPS of the truncated normal distribution, we use a function from the `scoringRules` package, see 
 ```{r, eval=FALSE}
 ?crps_tnorm
 ```
@@ -218,13 +217,13 @@ optim_out$par
 
 ## Out of sample evaluation - Preparations
 
-First, let' save the optimal parameter values we just determined:
+Let' save the optimal parameter values we just determined:
 ```{r}
 opt_par <- optim_out$par
 ```
 
+\pause
 Now, we extract ensemble forecasts and observations during the evaluation period (2016):
-
 ```{r}
 ind_2016 <- which(dates >= "2016-01-01")
 obs_2016 <- obs[ind_2016]
@@ -239,24 +238,26 @@ Recall that in our truncated normal model,
 \mu = a + b \bar X \qquad \sigma^2 = c.
 \]
 
+\pause
 Based on the estimated parameters $a,b,c$ in `opt_par`, we can now compute the values of $\mu$ and $\sigma$ for 2016.
-
 ```{r}
 ens_mean_2016 <- apply(ensfc[ind_2016,], 1, mean)
 tn_mu <- c(cbind(1, ens_mean_2016) %*% opt_par[1:2])
 tn_sigma <- sqrt(opt_par[3])
 ```
 
+
+## Out of sample evaluation - Scores
+
+
 Based on `tn_mu` and `tn_sigma`, we can now compute the CRPS for our post-processing model.
 
 ```{r}
 crps_emos <- crps_tnorm(y = obs_2016, 
-                        location = tn_mu, scale = tn_sigma, 
+                        location = tn_mu, 
+                        scale = tn_sigma, 
                         lower = 0, upper = Inf)
 ```
-
-
-## Out of sample evaluation - Scores
 
 For comparison, we also compute the CRPS of the raw ensemble in 2016.
 
@@ -264,21 +265,16 @@ For comparison, we also compute the CRPS of the raw ensemble in 2016.
 crps_ens <- crps_sample(y = obs_2016, dat = ensfc_2016)
 ```
 
+
+## Out of sample evaluation - Results
+
 Now, we can compare the raw and post-processed ensemble forecasts
 
 ```{r}
 mean(crps_ens)
 mean(crps_emos)
-```
-
-## Out of sample evaluation - Results
-
-Post-processing substantially improves the raw ensemble forecasts:
-
-```{r}
 summary(crps_ens - crps_emos)
 ```
-
 
 ## Out of sample evaluation - Results, continued
 

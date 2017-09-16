@@ -59,6 +59,13 @@ plot(dates[ind_2016], crps_ens - crps_emos, type = "l")
 abline(h = 0, lty = 2)
 
 
+## PIT function for TN model
+ptnorm0 <- function(q, mu, sig){
+  t1 <- pnorm((q-mu)/sig) - pnorm(-mu/sig)
+  t2 <- 1 - pnorm(-mu/sig)
+  return(t1/t2)
+}
+
 # exercise: Try to improve simple benchmark model
 # - what other information from ensemble can be used?
 # - are there other possible parametric families to use?

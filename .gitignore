@@ -1,6 +1,7 @@
 postproc_example/data/*
 postproc_example/test/*
 postproc_example/data_preprocessing/instructions.html
+postproc_example/simple_emos_benchmark.R
 test/*
 ToDo
 .Rproj.user

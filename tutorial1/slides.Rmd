@@ -145,9 +145,9 @@ plot(dates, crpsv_ens, type = "l")
 
 Aim: Fit a simple EMOS model for wind speed to data of 2016. 
 
-As a basic example, we will start by fitting a truncated normal model of the form
+As a basic example, we will start by fitting a normal model of the form
 \[
-Y | X_1,\dots,X_m \sim \mathcal{N}_{[0,\infty)}(\mu, \sigma^2),
+Y | X_1,\dots,X_m \sim \mathcal{N}(\mu, \sigma^2),
 \]
 where the location parameter $\mu$ is a linear function of the ensemble mean,
 \[
@@ -185,15 +185,14 @@ objective_fun_minCRPS <- function(par, ens_mean_train,
                                   obs_train){
   m <- cbind(1, ens_mean_train) %*% par[1:2]
   s <- sqrt(par[3])
-  return(sum(crps_tnorm(y = obs_train, 
-                        location = m, scale = s, 
-                        lower = 0, upper = Inf)))
+  return(sum(crps_norm(y = obs_train, 
+                        location = m, scale = s)))
 }
 ```
 
-To compute the CRPS of the truncated normal distribution, we use a function from the `scoringRules` package, see 
+To compute the CRPS of the normal distribution, we use a function from the `scoringRules` package, see 
 ```{r, eval=FALSE}
-?crps_tnorm
+?crps_norm
 ```
 
 
@@ -233,7 +232,7 @@ ensfc_2016 <- ensfc[ind_2016, ]
 
 ## Out of sample evaluation - Forecast distribution parameters
 
-Recall that in our truncated normal model,
+Recall that in our normal model,
 \[
 \mu = a + b \bar X \qquad \sigma^2 = c.
 \]
@@ -242,8 +241,8 @@ Recall that in our truncated normal model,
 Based on the estimated parameters $a,b,c$ in `opt_par`, we can now compute the values of $\mu$ and $\sigma$ for 2016.
 ```{r}
 ens_mean_2016 <- apply(ensfc[ind_2016,], 1, mean)
-tn_mu <- c(cbind(1, ens_mean_2016) %*% opt_par[1:2])
-tn_sigma <- sqrt(opt_par[3])
+n_mu <- c(cbind(1, ens_mean_2016) %*% opt_par[1:2])
+n_sigma <- sqrt(opt_par[3])
 ```
 
 
@@ -253,10 +252,9 @@ tn_sigma <- sqrt(opt_par[3])
 Based on `tn_mu` and `tn_sigma`, we can now compute the CRPS for our post-processing model.
 
 ```{r}
-crps_emos <- crps_tnorm(y = obs_2016, 
-                        location = tn_mu, 
-                        scale = tn_sigma, 
-                        lower = 0, upper = Inf)
+crps_emos <- crps_norm(y = obs_2016, 
+                      location = n_mu, 
+                      scale = n_sigma)
 ```
 
 For comparison, we also compute the CRPS of the raw ensemble in 2016.
@@ -285,20 +283,10 @@ abline(v = 0, col = "red", lwd = 2)
 
 ## Out of sample evaluation - Calibration
 
-To compute PIT values, we need a function to compute the CDF of a truncated normal distribution
+The PIT values can be computed with the `pnorm()` function
 ```{r}
-ptnorm0 <- function(q, mu, sig){
-  t1 <- pnorm((q-mu)/sig) - pnorm(-mu/sig)
-  t2 <- 1 - pnorm(-mu/sig)
-  return(t1/t2)
-}
+pit_emos <- pnorm(obs_2016, n_mu, n_sigma)
 ```
-
-Now, we can compute the PIT values
-```{r}
-pit_emos <- ptnorm0(obs_2016, tn_mu, tn_sigma)
-```
-
 
 ## Out of sample evaluation - Calibration, continued
 
@@ -331,5 +319,5 @@ Build your own post-processing model. Try to outperform our simple benchmark mod
 Some hints for potential improvements:
 
 - what other information from the ensemble be used?
+- are there more suitable parametric families for wind speed? (hint: `pnorm(0, n_mu, n_sigma)`)
 - are there alternative ways to select the training period?
-- are there other parametric families that might be useful for wind speed?

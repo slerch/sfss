@@ -16,11 +16,14 @@ user <- "sl"  # "sl" / "aj"
 
 absolute forecast evaluation, scoringRules introduction, some simulations?
 
+
+
 ## Data
 
 Set path to directory containing the data
 ```{r, eval = FALSE, echo = TRUE}
-data_dir <- "/path/to/data/"
+data_dir <- "/path/to/data/" # Linux, MacOS
+data_dir <- "C:\path\to\data\" # Windows
 ```
 
 ```{r, eval = TRUE, echo = FALSE}
@@ -221,8 +224,10 @@ Let' save the optimal parameter values we just determined:
 opt_par <- optim_out$par
 ```
 
+
+\textcolor{red}{Exercise:} Generate objects `obs_2016` and `ensfc_2016` that contain observations and ensemble forecasts during the evaluation period (entire year 2016).
+
 \pause
-Now, we extract ensemble forecasts and observations during the evaluation period (2016):
 ```{r}
 ind_2016 <- which(dates >= "2016-01-01")
 obs_2016 <- obs[ind_2016]
@@ -248,8 +253,8 @@ n_sigma <- sqrt(opt_par[3])
 
 ## Out of sample evaluation - Scores
 
-
-Based on `tn_mu` and `tn_sigma`, we can now compute the CRPS for our post-processing model.
+\textcolor{red}{Exercise:} Compute the CRPS for our post-processing model based on `tn_mu` and `tn_sigma`.
+\pause
 
 ```{r}
 crps_emos <- crps_norm(y = obs_2016, 
@@ -257,7 +262,9 @@ crps_emos <- crps_norm(y = obs_2016,
                       scale = n_sigma)
 ```
 
-For comparison, we also compute the CRPS of the raw ensemble in 2016.
+\pause
+\textcolor{red}{Exercise:} For comparison, also compute the CRPS of the raw ensemble in 2016.
+\pause
 
 ```{r}
 crps_ens <- crps_sample(y = obs_2016, dat = ensfc_2016)

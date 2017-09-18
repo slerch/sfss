@@ -2,7 +2,5 @@ postproc_example/data/*
 postproc_example/test/*
 postproc_example/data_preprocessing/instructions.html
 postproc_example/simple_emos_benchmark.R
-test/*
-ToDo
 .Rproj.user
-tutorial1/slides.pdf
+software_tutorials/tutorial1_Evaluation-Postprocessing/slides.pdf

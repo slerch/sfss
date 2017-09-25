@@ -11,144 +11,185 @@ output:
 user <- "sl"  # "sl" / "aj"
 ```
 
+## Objective and plan
 
-## Some introduction?
+In this software tutorial, we will evaluate and statistically post-process ensemble forecasts of wind speed. Outline:
 
-absolute forecast evaluation, scoringRules introduction, some simulations?
+- explore data set of wind speed forecasts and observations
+- evaluation of ensemble forecasts
+- design of a simple post-processing model
+- evaluation of post-processed forecasts
 
+\bigbreak
+\textit{... Please feel free to code along with us, possibly in groups. Interrupt us at any time if you have any questions.}
 
-
-## Data
-
-Set path to directory containing the data
-```{r, eval = FALSE, echo = TRUE}
-data_dir <- "/path/to/data/" # Linux, MacOS
-data_dir <- "C:\path\to\data\" # Windows
-```
+\bigbreak
+The code will be shared on \url{https://github.com/slerch/sfss}
 
 ```{r, eval = TRUE, echo = FALSE}
 if(user == "sl"){
-  data_dir <- "/home/sebastian/Dropbox/ERC SummerSchool/software_tutorials/postproc_example/data/new/"
+  data_dir <- "/home/sebastian/Dropbox/ERC SummerSchool/GitHub_repo/postproc_example/data/new/"
 } else if(user == "aj"){
   data_dir <- 123
 }
-```
-
-and load the data set
-```{r}
 load(paste0(data_dir, "HDwind.Rdata"))
 ```
 
 
-## Contents of the data set
+<!-- ## Data -->
 
-The data set contains objects `ensfc`, `obs` and `dates`
+<!-- Set path to directory containing the data -->
+<!-- ```{r, eval = FALSE, echo = TRUE} -->
+<!-- data_dir <- "/path/to/data/" # Linux, MacOS -->
+<!-- data_dir <- "C:\path\to\data\" # Windows -->
+<!-- ``` -->
 
-The vector `dates` contains dates in 2015 and 2016, at which the forecasts and corresponding observations are valid (at 12 UTC).
+<!-- ```{r, eval = TRUE, echo = FALSE} -->
+<!-- if(user == "sl"){ -->
+<!--   data_dir <- "/home/sebastian/Dropbox/ERC SummerSchool/GitHub_repo/postproc_example/data/new/" -->
+<!-- } else if(user == "aj"){ -->
+<!--   data_dir <- 123 -->
+<!-- } -->
+<!-- ``` -->
 
-```{r}
-str(dates)
-range(dates)
-```
+<!-- and load the data set -->
+<!-- ```{r} -->
+<!-- load(paste0(data_dir, "HDwind.Rdata")) -->
+<!-- ``` -->
 
+## Data set \texttt{HDwind.Rdata}
 
-## Contents of the data set: Forecasts
+The data set has been distributed via email. It contains
 
-The matrix `ensfc` contains ECMWF ensemble forecasts of wind speed for a grid point close to Heidelberg with a lead time of 60 hours (2.5 days).
+- ECMWF ensemble forecasts (50 members) of wind speed 
+    - for a model grid point close to Heidelberg
+    - with a forecast horizon of 60 hours (2.5 days)
+    - valid at 12 UTC
+    - from January 2015 - December 2016
+- corresponding re-analysis values
+- dates at which the forecasts and re-analysis values are valid
 
-```{r}
-str(ensfc)
-```
-
-For each of the 731 dates, an ensemble with 50 member forecasts is available.
-
-
-## Contents of the data set: Forecasts
-
-```{r, fig.width=6, fig.height=5, out.width="0.7\\textwidth", fig.align="center"}
-hist(ensfc)
-```
-
-
-## Contents of the data set: Observations
-
-The vector `obs` contains reanalysis values corresponding to the valid times of the ensemble forecasts.
-
-```{r}
-str(obs)
-```
-
-
-## Contents of the data set: Observations, continued
-
-```{r, fig.width=6, fig.height=5, out.width="0.7\\textwidth", fig.align="center"}
-hist(obs, breaks = seq(0, max(ceiling(obs)), 1))
-```
+\pause
+\small
+All data have been downloaded from the TIGGE archive, see \url{https://github.com/slerch/sfss/tree/master/postproc_example/data_preprocessing} if you are interested
 
 
-## The scoringRules package
+## Now, let's load and explore the data set
 
-To install the `scoringRules` package
-```{r, eval = FALSE}
-install.packages("scoringRules")
-```
 
-To load the `scoringRules` package
-```{r}
+<!-- ## Contents of the data set -->
+
+<!-- The data set contains objects `ensfc`, `obs` and `dates` -->
+
+<!-- The vector `dates` contains dates in 2015 and 2016, at which the forecasts and corresponding observations are valid (at 12 UTC). -->
+
+<!-- ```{r} -->
+<!-- str(dates) -->
+<!-- range(dates) -->
+<!-- ``` -->
+
+
+<!-- ## Contents of the data set: Forecasts -->
+
+<!-- The matrix `ensfc` contains ECMWF ensemble forecasts of wind speed for a grid point close to Heidelberg with a lead time of 60 hours (2.5 days). -->
+
+<!-- ```{r} -->
+<!-- str(ensfc) -->
+<!-- ``` -->
+
+<!-- For each of the 731 dates, an ensemble with 50 member forecasts is available. -->
+
+
+<!-- ## Contents of the data set: Forecasts -->
+
+<!-- ```{r, fig.width=6, fig.height=5, out.width="0.7\\textwidth", fig.align="center"} -->
+<!-- hist(ensfc) -->
+<!-- ``` -->
+
+
+<!-- ## Contents of the data set: Observations -->
+
+<!-- The vector `obs` contains reanalysis values corresponding to the valid times of the ensemble forecasts. -->
+
+<!-- ```{r} -->
+<!-- str(obs) -->
+<!-- ``` -->
+
+
+<!-- ## Contents of the data set: Observations, continued -->
+
+<!-- ```{r, fig.width=6, fig.height=5, out.width="0.7\\textwidth", fig.align="center"} -->
+<!-- hist(obs, breaks = seq(0, max(ceiling(obs)), 1)) -->
+<!-- ``` -->
+
+
+<!-- ## The scoringRules package -->
+
+<!-- To install the `scoringRules` package -->
+<!-- ```{r, eval = FALSE} -->
+<!-- install.packages("scoringRules") -->
+<!-- ``` -->
+
+<!-- To load the `scoringRules` package -->
+<!-- ```{r} -->
+<!-- library(scoringRules) -->
+<!-- ``` -->
+
+<!-- Check if version is $\geq$ 0.9.3 (otherwise: re-install the package) -->
+<!-- ```{r} -->
+<!-- packageVersion("scoringRules") >= "0.9.3" -->
+<!-- ``` -->
+
+<!-- ## Documentation of the scoringRules package -->
+
+<!-- The documentation of individual functions can be accessed via e.g. -->
+<!-- ```{r, eval = FALSE} -->
+<!-- ?crps_sample -->
+<!-- ``` -->
+
+<!-- To browse the documentation of the functions available in the package use -->
+<!-- ```{r, eval = FALSE} -->
+<!-- help.start() ## navigate to 'packages' - 'scoringRules' -->
+<!-- ``` -->
+
+<!-- ## Documentation of the scoringRules package -->
+
+<!-- Vignettes with introductions and background information provided with the package can be accessed via -->
+<!-- ```{r, eval = FALSE} -->
+<!-- browseVignettes("scoringRules") -->
+<!-- ``` -->
+
+<!-- For more information see our working paper available at https://arxiv.org/abs/1709.04743. -->
+
+```{r, echo = FALSE, eval = TRUE}
 library(scoringRules)
-```
-
-Check if version is $\geq$ 0.9.3 (otherwise: re-install the package)
-```{r}
-packageVersion("scoringRules") >= "0.9.3"
-```
-
-## Documentation of the scoringRules package
-
-The documentation of individual functions can be accessed via e.g.
-```{r, eval = FALSE}
-?crps_sample
-```
-
-To browse the documentation of the functions available in the package use
-```{r, eval = FALSE}
-help.start() ## navigate to 'packages' - 'scoringRules'
-```
-
-## Documentation of the scoringRules package
-
-Vignettes with introductions and background information provided with the package can be accessed via
-```{r, eval = FALSE}
-browseVignettes("scoringRules")
-```
-
-For more information see our working paper available at https://arxiv.org/abs/1709.04743.
-
-
-## Compute the CRPS of the ensemble forecast
-
-.. or: show simulation examples and use this as exercise?
-
-```{r}
 crpsv_ens <- crps_sample(y = obs, dat = ensfc)
-summary(crpsv_ens)
+# summary(crpsv_ens)
 ```
 
 
-## Plot CRPS values 
+<!-- ## Compute the CRPS of the ensemble forecast -->
 
-```{r, fig.width=10, fig.height=5}
-par(mfrow = c(1,2))
-hist(crpsv_ens)
-plot(dates, crpsv_ens, type = "l")
-```
+<!-- .. or: show simulation examples and use this as exercise? -->
+
+<!-- ```{r} -->
+<!-- crpsv_ens <- crps_sample(y = obs, dat = ensfc) -->
+<!-- summary(crpsv_ens) -->
+<!-- ``` -->
 
 
-## Post-processing example
+<!-- ## Plot CRPS values  -->
 
-Aim: Fit a simple EMOS model for wind speed to data of 2016. 
+<!-- ```{r, fig.width=10, fig.height=5} -->
+<!-- par(mfrow = c(1,2)) -->
+<!-- hist(crpsv_ens) -->
+<!-- plot(dates, crpsv_ens, type = "l") -->
+<!-- ``` -->
 
-As a basic example, we will start by fitting a normal model of the form
+
+## Our post-processing model
+
+Let's fit a simple EMOS model. As a basic example, we will start by fitting a normal model of the form
 \[
 Y | X_1,\dots,X_m \sim \mathcal{N}(\mu, \sigma^2),
 \]
@@ -158,164 +199,172 @@ where the location parameter $\mu$ is a linear function of the ensemble mean,
 \]
 and the scale parameter $\sigma$ is assumed to be constant,
 \[
-\sigma^2 = c
+\sigma^2 = c.
 \]
+Plan: Use data from 2015 to estimate model for 2016.
+
+## Steps in implementing our post-processing model
+
+1. define objective function (mean CRPS as a function of the EMOS parameters $a,b,c$)
+2. determine optimal parameters over the training set by numerically minimizing the objective function
+3. compute out of sample parameter values in evaluation period
+4. evaluate model
 
 
-## Estimation - Training set
+<!-- ## Estimation - Training set -->
 
-Plan: Estimate model parameters $a,b,c$ based on training data (forecast-observation pairs in 2015), and evaluate the forecasts for 2016.
+<!-- Plan: Estimate model parameters $a,b,c$ based on training data (forecast-observation pairs in 2015), and evaluate the forecasts for 2016. -->
 
-The parameters are estimated by numerically minimizing the mean CRPS over the training set.
+<!-- The parameters are estimated by numerically minimizing the mean CRPS over the training set. -->
 
-\pause
-Let's start by extracting the training data:
-```{r}
-ind_training <- which(dates <= "2015-12-29")
-ensfc_mean_training <- apply(ensfc[ind_training,],
-                             1, mean)
-obs_training <- obs[ind_training]
-```
+<!-- \pause -->
+<!-- Let's start by extracting the training data: -->
+<!-- ```{r} -->
+<!-- ind_training <- which(dates <= "2015-12-29") -->
+<!-- ensfc_mean_training <- apply(ensfc[ind_training,], -->
+<!--                              1, mean) -->
+<!-- obs_training <- obs[ind_training] -->
+<!-- ``` -->
 
 <!-- Note that we only use dates before "2015-12-29" due to the lead time of the forecasts. -->
 
-## Estimation - Objective function
+<!-- ## Estimation - Objective function -->
 
-Next, we define an objective function we aim to minimize which computes the (aggregated) CRPS over the training period as a function of $a,b,c$.
+<!-- Next, we define an objective function we aim to minimize which computes the (aggregated) CRPS over the training period as a function of $a,b,c$. -->
 
-```{r}
-objective_fun_minCRPS <- function(par, ens_mean_train, 
-                                  obs_train){
-  m <- cbind(1, ens_mean_train) %*% par[1:2]
-  s <- sqrt(par[3])
-  return(sum(crps_norm(y = obs_train, 
-                        location = m, scale = s)))
-}
-```
+<!-- ```{r} -->
+<!-- objective_fun_minCRPS <- function(par, ens_mean_train,  -->
+<!--                                   obs_train){ -->
+<!--   m <- cbind(1, ens_mean_train) %*% par[1:2] -->
+<!--   s <- sqrt(par[3]) -->
+<!--   return(sum(crps_norm(y = obs_train,  -->
+<!--                         location = m, scale = s))) -->
+<!-- } -->
+<!-- ``` -->
 
-To compute the CRPS of the normal distribution, we use a function from the `scoringRules` package, see 
-```{r, eval=FALSE}
-?crps_norm
-```
-
-
-## Estimation - Numerical optimization
-
-Now, we can estimate optimal values of $a,b,c$ using the numerical optimization function `optim()`
-
-```{r}
-optim_out <- optim(par = c(1,1,1), # starting values
-                   fn = objective_fun_minCRPS, 
-                   ens_mean_train = ensfc_mean_training, 
-                   obs_train = obs_training)
-```
-
-To view details on the outcome, take a look at `optim_out`. The optimal parameters can be accessed via
-
-```{r}
-optim_out$par
-```
+<!-- To compute the CRPS of the normal distribution, we use a function from the `scoringRules` package, see  -->
+<!-- ```{r, eval=FALSE} -->
+<!-- ?crps_norm -->
+<!-- ``` -->
 
 
-## Out of sample evaluation - Preparations
+<!-- ## Estimation - Numerical optimization -->
 
-Let' save the optimal parameter values we just determined:
-```{r}
-opt_par <- optim_out$par
-```
+<!-- Now, we can estimate optimal values of $a,b,c$ using the numerical optimization function `optim()` -->
 
+<!-- ```{r} -->
+<!-- optim_out <- optim(par = c(1,1,1), # starting values -->
+<!--                    fn = objective_fun_minCRPS,  -->
+<!--                    ens_mean_train = ensfc_mean_training,  -->
+<!--                    obs_train = obs_training) -->
+<!-- ``` -->
 
-\textcolor{red}{Exercise:} Generate objects `obs_2016` and `ensfc_2016` that contain observations and ensemble forecasts during the evaluation period (entire year 2016).
+<!-- To view details on the outcome, take a look at `optim_out`. The optimal parameters can be accessed via -->
 
-\pause
-```{r}
-ind_2016 <- which(dates >= "2016-01-01")
-obs_2016 <- obs[ind_2016]
-ensfc_2016 <- ensfc[ind_2016, ]
-```
-
-
-## Out of sample evaluation - Forecast distribution parameters
-
-Recall that in our normal model,
-\[
-\mu = a + b \bar X \qquad \sigma^2 = c.
-\]
-
-\pause
-Based on the estimated parameters $a,b,c$ in `opt_par`, we can now compute the values of $\mu$ and $\sigma$ for 2016.
-```{r}
-ens_mean_2016 <- apply(ensfc[ind_2016,], 1, mean)
-n_mu <- c(cbind(1, ens_mean_2016) %*% opt_par[1:2])
-n_sigma <- sqrt(opt_par[3])
-```
+<!-- ```{r} -->
+<!-- optim_out$par -->
+<!-- ``` -->
 
 
-## Out of sample evaluation - Scores
+<!-- ## Out of sample evaluation - Preparations -->
 
-\textcolor{red}{Exercise:} Compute the CRPS for our post-processing model based on `tn_mu` and `tn_sigma`.
-\pause
-
-```{r}
-crps_emos <- crps_norm(y = obs_2016, 
-                      location = n_mu, 
-                      scale = n_sigma)
-```
-
-\pause
-\textcolor{red}{Exercise:} For comparison, also compute the CRPS of the raw ensemble in 2016.
-\pause
-
-```{r}
-crps_ens <- crps_sample(y = obs_2016, dat = ensfc_2016)
-```
+<!-- Let' save the optimal parameter values we just determined: -->
+<!-- ```{r} -->
+<!-- opt_par <- optim_out$par -->
+<!-- ``` -->
 
 
-## Out of sample evaluation - Results
+<!-- \textcolor{red}{Exercise:} Generate objects `obs_2016` and `ensfc_2016` that contain observations and ensemble forecasts during the evaluation period (entire year 2016). -->
 
-Now, we can compare the raw and post-processed ensemble forecasts
-
-```{r}
-mean(crps_ens)
-mean(crps_emos)
-summary(crps_ens - crps_emos)
-```
-
-## Out of sample evaluation - Results, continued
-
-```{r, fig.width=7, fig.height=5, out.width="0.75\\textwidth", fig.align="center"}
-hist(crps_ens - crps_emos)
-abline(v = 0, col = "red", lwd = 2)
-```
-
-## Out of sample evaluation - Calibration
-
-The PIT values can be computed with the `pnorm()` function
-```{r}
-pit_emos <- pnorm(obs_2016, n_mu, n_sigma)
-```
-
-## Out of sample evaluation - Calibration, continued
-
-Similarly, we need to compute the verification ranks of the observation when pooled within the raw ensemble forecasts.
-
-```{r}
-vrh_emos <- numeric(length = length(obs_2016))
-for(i in 1:length(obs_2016)){
-  vrh_emos[i] <- rank(c(obs_2016[i], ensfc_2016[i,]))[1]
-}
-```
+<!-- \pause -->
+<!-- ```{r} -->
+<!-- ind_2016 <- which(dates >= "2016-01-01") -->
+<!-- obs_2016 <- obs[ind_2016] -->
+<!-- ensfc_2016 <- ensfc[ind_2016, ] -->
+<!-- ``` -->
 
 
-## Out of sample evaluation - Calibration, continued
+<!-- ## Out of sample evaluation - Forecast distribution parameters -->
 
-```{r, fig.width=9, fig.height=5, out.width="0.8\\textwidth", fig.align="center"}
-par(mfrow=c(1,2))
-hist(vrh_emos, freq = FALSE, breaks = seq(0, 51, 3), 
-     ylim = 1/51*c(0,4)); abline(h = 1/51, lty = 2)
-hist(pit_emos, breaks = seq(0, 1, length.out = 17), 
-     freq = FALSE, ylim = c(0,4)); abline(h = 1, lty = 2)
-```
+<!-- Recall that in our normal model, -->
+<!-- \[ -->
+<!-- \mu = a + b \bar X \qquad \sigma^2 = c. -->
+<!-- \] -->
+
+<!-- \pause -->
+<!-- Based on the estimated parameters $a,b,c$ in `opt_par`, we can now compute the values of $\mu$ and $\sigma$ for 2016. -->
+<!-- ```{r} -->
+<!-- ens_mean_2016 <- apply(ensfc[ind_2016,], 1, mean) -->
+<!-- n_mu <- c(cbind(1, ens_mean_2016) %*% opt_par[1:2]) -->
+<!-- n_sigma <- sqrt(opt_par[3]) -->
+<!-- ``` -->
+
+
+<!-- ## Out of sample evaluation - Scores -->
+
+<!-- \textcolor{red}{Exercise:} Compute the CRPS for our post-processing model based on `tn_mu` and `tn_sigma`. -->
+<!-- \pause -->
+
+<!-- ```{r} -->
+<!-- crps_emos <- crps_norm(y = obs_2016,  -->
+<!--                       location = n_mu,  -->
+<!--                       scale = n_sigma) -->
+<!-- ``` -->
+
+<!-- \pause -->
+<!-- \textcolor{red}{Exercise:} For comparison, also compute the CRPS of the raw ensemble in 2016. -->
+<!-- \pause -->
+
+<!-- ```{r} -->
+<!-- crps_ens <- crps_sample(y = obs_2016, dat = ensfc_2016) -->
+<!-- ``` -->
+
+
+<!-- ## Out of sample evaluation - Results -->
+
+<!-- Now, we can compare the raw and post-processed ensemble forecasts -->
+
+<!-- ```{r} -->
+<!-- mean(crps_ens) -->
+<!-- mean(crps_emos) -->
+<!-- summary(crps_ens - crps_emos) -->
+<!-- ``` -->
+
+<!-- ## Out of sample evaluation - Results, continued -->
+
+<!-- ```{r, fig.width=7, fig.height=5, out.width="0.75\\textwidth", fig.align="center"} -->
+<!-- hist(crps_ens - crps_emos) -->
+<!-- abline(v = 0, col = "red", lwd = 2) -->
+<!-- ``` -->
+
+<!-- ## Out of sample evaluation - Calibration -->
+
+<!-- The PIT values can be computed with the `pnorm()` function -->
+<!-- ```{r} -->
+<!-- pit_emos <- pnorm(obs_2016, n_mu, n_sigma) -->
+<!-- ``` -->
+
+<!-- ## Out of sample evaluation - Calibration, continued -->
+
+<!-- Similarly, we need to compute the verification ranks of the observation when pooled within the raw ensemble forecasts. -->
+
+<!-- ```{r} -->
+<!-- vrh_emos <- numeric(length = length(obs_2016)) -->
+<!-- for(i in 1:length(obs_2016)){ -->
+<!--   vrh_emos[i] <- rank(c(obs_2016[i], ensfc_2016[i,]))[1] -->
+<!-- } -->
+<!-- ``` -->
+
+
+<!-- ## Out of sample evaluation - Calibration, continued -->
+
+<!-- ```{r, fig.width=9, fig.height=5, out.width="0.8\\textwidth", fig.align="center"} -->
+<!-- par(mfrow=c(1,2)) -->
+<!-- hist(vrh_emos, freq = FALSE, breaks = seq(0, 51, 3),  -->
+<!--      ylim = 1/51*c(0,4)); abline(h = 1/51, lty = 2) -->
+<!-- hist(pit_emos, breaks = seq(0, 1, length.out = 17),  -->
+<!--      freq = FALSE, ylim = c(0,4)); abline(h = 1, lty = 2) -->
+<!-- ``` -->
 
 
 ## Exercise
@@ -325,6 +374,6 @@ Build your own post-processing model. Try to outperform our simple benchmark mod
 \pause
 Some hints for potential improvements:
 
-- what other information from the ensemble be used?
-- are there more suitable parametric families for wind speed? (hint: `pnorm(0, n_mu, n_sigma)`)
-- are there alternative ways to select the training period?
+- other information from the ensemble?
+- more suitable parametric families for wind speed? (hint: `pnorm(0, n_mu, n_sigma)`)
+- alternative ways to select the training period?

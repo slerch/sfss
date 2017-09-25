@@ -5,7 +5,7 @@
 # Data
 
 ## load data
-load("~/GitHub/sfss/postproc_example/data/HDwind.Rdata")
+# load("~/GitHub/sfss/postproc_example/data/HDwind.Rdata")
 load("/home/sebastian/Dropbox/ERC SummerSchool/GitHub_repo/postproc_example/data/new/HDwind.Rdata")
 
 ## contents data
@@ -42,14 +42,32 @@ rank_hist
 ## training
 
 ### objective function
+library(scoringRules)
 
+objective_fun <- function(par, ens_mean_train, obs_train){
+  m <- cbind(1, ens_mean_train) %*% par[1:2] # mu = a + b ensmean
+  s <- sqrt(par[3]) # sigma^2 = c
+  return(sum(crps_norm(y = obs_train, location = m, scale = s))) # or mean
+}
 
 ### optimization
+optim_out <- optim(par = c(1,1,1), # starting values
+                   fn = objective_fun, # objective fct
+                   ens_mean_train = apply(training_ensfc, 1, mean),
+                   obs_train = obs[training_ind])
 
+optim_out
+
+opt_par <- optim_out$par
 
 ## forecasting
-
 ### calculate out-of-sample parameters
+eval_ind <- which(dates >= "2016-01-01")
+
+ensmean_eval <- apply(ensfc[eval_ind,], 1, mean)
+
+mu_eval <- c(cbind(1, ensmean_eval) %*%  opt_par[1:2])
+sig_eval <- sqrt(opt_par[3])
 
 # ----  [Alexander: Verification of post-processed forecasts] -----
 

@@ -13,15 +13,15 @@ user <- "sl"  # "sl" / "aj"
 
 ## Objective and plan
 
-In this software tutorial, we will evaluate and statistically post-process ensemble forecasts of wind speed. Outline:
+In this software tutorial, we will evaluate and statistically post-process ensemble forecasts of wind speed. \pause Outline:
 
 - explore data set of wind speed forecasts and observations
 - evaluation of ensemble forecasts
 - design of a simple post-processing model
 - evaluation of post-processed forecasts
 
-\bigbreak
-\textit{... Please feel free to code along with us, possibly in groups. Interrupt us at any time if you have any questions.}
+\bigbreak\pause
+\textit{Please feel free to code along with us, possibly in groups. Interrupt us at any time if you have any questions.}
 
 \bigbreak
 The code will be shared on \url{https://github.com/slerch/sfss}
@@ -193,10 +193,12 @@ Let's fit a simple EMOS model. As a basic example, we will start by fitting a no
 \[
 Y | X_1,\dots,X_m \sim \mathcal{N}(\mu, \sigma^2),
 \]
+\pause
 where the location parameter $\mu$ is a linear function of the ensemble mean,
 \[
 \mu = a + b\bar X,
 \]
+\pause 
 and the scale parameter $\sigma$ is assumed to be constant,
 \[
 \sigma^2 = c.

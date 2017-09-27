@@ -10,9 +10,17 @@ load("/home/sebastian/Dropbox/ERC SummerSchool/GitHub_repo/postproc_example/data
 
 ## contents data
 ls()
+dates
 str(dates)
+dates[1]
+dates[1] + 10
+dates[1] + 100
 range(dates)
+
+obs
 str(obs)
+
+ensfc
 str(ensfc)
 
 # ----  [Alexander: Absolute verification of ensemble forecasts] -----
@@ -66,7 +74,7 @@ eval_ind <- which(dates >= "2016-01-01")
 
 ensmean_eval <- apply(ensfc[eval_ind,], 1, mean)
 
-mu_eval <- c(cbind(1, ensmean_eval) %*%  opt_par[1:2])
+mu_eval <- as.vector(cbind(1, ensmean_eval) %*%  opt_par[1:2])
 sig_eval <- sqrt(opt_par[3])
 
 # ----  [Alexander: Verification of post-processed forecasts] -----

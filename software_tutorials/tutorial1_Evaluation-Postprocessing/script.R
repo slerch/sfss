@@ -19,14 +19,17 @@ range(dates)
 
 obs
 str(obs)
+range(obs)
 
 ensfc
 str(ensfc)
+dim(ensfc)
+range(ensfc)
 
 # ----  [Alexander: Absolute verification of ensemble forecasts] -----
 
 ## split data
-training_ind <- which(dates < "2016-12-30")
+training_ind <- which(dates < "2015-12-30")
 training_ensfc <- ensfc[training_ind, ]
 
 ## absolute verification of training data
@@ -72,10 +75,10 @@ opt_par <- optim_out$par
 ### calculate out-of-sample parameters
 eval_ind <- which(dates >= "2016-01-01")
 
-ensmean_eval <- apply(ensfc[eval_ind,], 1, mean)
+eval_ensmean <- apply(ensfc[eval_ind,], 1, mean)
 
-mu_eval <- as.vector(cbind(1, ensmean_eval) %*%  opt_par[1:2])
-sig_eval <- sqrt(opt_par[3])
+eval_mu <- as.vector(cbind(1, eval_ensmean) %*%  opt_par[1:2])
+eval_sigma <- sqrt(opt_par[3])
 
 # ----  [Alexander: Verification of post-processed forecasts] -----
 
@@ -88,7 +91,3 @@ sig_eval <- sqrt(opt_par[3])
 ### compare scores
 
 # ----  [Alexander/Sebastian: Exercise: DIY] -----
-
-#
-# do it yourself, mix it up, change things
-#

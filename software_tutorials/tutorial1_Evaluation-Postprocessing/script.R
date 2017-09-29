@@ -31,18 +31,34 @@ range(ensfc)
 ## split data
 training_ind <- which(dates < "2015-12-30")
 training_ensfc <- ensfc[training_ind, ]
+training_obs <- obs[training_ind]
+
+eval_ind <- which(dates >= "2016-01-01")
+eval_ensfc <- ensfc[eval_ind, ]
+eval_obs <- obs[eval_ind]
 
 ## absolute verification of training data
 
-### scatter plot
-plot(ensfc, rep(obs, 50))
-abline(a = 0, b = 1)
+### calibration diagram
+pairs <- data.frame(fc = as.vector(training_ensfc), obs = training_obs)
+plot(pairs, col = "gray")
+abline(a = 0, b = 1, col = "red")
 
-boxplot(t(head(ensfc, 30)))
-lines(head(obs, 30), col = "red", type = "o")
+bin <- ceiling(rank(training_ensfc) / 825)
+pairs_avgs <- aggregate(pairs, by = list(bin = bin), FUN = mean)
+points(pairs_avgs[-1], pch = 16)
 
 ### rank histogram
-rank_hist
+boxplot(head(training_ensfc, 30), use.cols = FALSE)
+lines(head(training_obs, 30), col = "red", type = "o")
+
+rhist <- function(ensfc, obs, ...) {
+  ranks <- apply(ensfc < obs, 1, sum) + 1
+  counts <- tabulate(ranks)
+  barplot(counts, names.arg = seq_along(counts), ...)
+}
+
+rhist(training_ensfc, training_obs)
 
 # ----  [Sebastian: Implementation of simple post-processing model (slides + code)] -----
 
@@ -87,6 +103,12 @@ eval_sigma <- sqrt(opt_par[3])
 ## absolute verification of test data
 
 ### compare rank (ensemble) and PIT (EMOS) histograms
+
+par(mfrow = c(1, 2))
+rhist(eval_ensfc, eval_obs, ylim = c(0, 100))
+
+PIT <- pnorm(eval_obs, eval_mu, eval_sigma)
+hist(PIT, ylim = c(0, 100), breaks = seq(0, 1, len = 51))
 
 ### compare scores
 

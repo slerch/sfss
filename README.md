@@ -1,1 +1,1 @@
-Repository to share presentations and code for software tutorials at the ScienceFore Summer School: The Science of Forecasting in Heidelberg, October 2017, https://sciencefore2017.h-its.org/.
+Repository to share code for software tutorials at the ScienceFore Summer School: The Science of Forecasting in Heidelberg, October 2017, https://sciencefore2017.h-its.org/. Presentations of the invited speakers are available at https://sciencefore2017.h-its.org/program.html.
